@@ -177,7 +177,7 @@ backup_existing_config() {
     local timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
     local backup_path="${BACKUPS_DIR}/${timestamp}"
     
-    if [ ! -d "$CONFIG_DIR/hypr" ] && [ ! -d "$CONFIG_DIR/noctalia" ]; then
+    if [ ! -d "$CONFIG_DIR/hypr" ]; then
         log_info "No hay configuración anterior que respaldar"
         return 0
     fi
@@ -188,11 +188,6 @@ backup_existing_config() {
     if [ -d "$CONFIG_DIR/hypr" ]; then
         cp -r "$CONFIG_DIR/hypr" "$backup_path/" 2>/dev/null || true
         log_success "Backup de hypr creado"
-    fi
-    
-    if [ -d "$CONFIG_DIR/noctalia" ]; then
-        cp -r "$CONFIG_DIR/noctalia" "$backup_path/" 2>/dev/null || true
-        log_success "Backup de noctalia creado"
     fi
     
     echo "$backup_path"
@@ -212,12 +207,6 @@ restore_backup() {
         rm -rf "$CONFIG_DIR/hypr"
         cp -r "$backup_path/hypr" "$CONFIG_DIR/"
         log_success "Hypr restaurado"
-    fi
-    
-    if [ -d "$backup_path/noctalia" ]; then
-        rm -rf "$CONFIG_DIR/noctalia"
-        cp -r "$backup_path/noctalia" "$CONFIG_DIR/"
-        log_success "Noctalia restaurado"
     fi
 }
 
@@ -301,7 +290,21 @@ create_symlinks() {
     log_section "Creando symlinks"
     
     safe_symlink "${DOTFILES_DIR}/hypr" "${CONFIG_DIR}/hypr" "Hyprland config" || return 1
-    safe_symlink "${DOTFILES_DIR}/noctalia" "${CONFIG_DIR}/noctalia" "Noctalia config" || return 1
+    safe_symlink "${DOTFILES_DIR}/DankMaterialShell/settings.json" "${CONFIG_DIR}/DankMaterialShell/settings.json" "DMS settings" || return 1
+    safe_symlink "${DOTFILES_DIR}/DankMaterialShell/themes" "${CONFIG_DIR}/DankMaterialShell/themes" "DMS themes" || return 1
+    
+    # Configurar systemd override para DMS (solo en Hyprland, no en GNOME)
+    local dms_override_dir="${CONFIG_DIR}/systemd/user/dms.service.d"
+    mkdir -p "$dms_override_dir"
+    cat > "$dms_override_dir/hyprland-only.conf" << 'EOF'
+[Unit]
+# Solo iniciar DMS si estamos en Hyprland, no en GNOME
+ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
+
+[Service]
+# Sin cambios - usar defaults
+EOF
+    log_success "Configuración systemd para DMS creada"
     
     log_success "Symlinks creados correctamente"
     return 0
@@ -319,8 +322,13 @@ validate_installation() {
         return 1
     fi
     
-    if [ ! -L "${CONFIG_DIR}/noctalia" ]; then
-        log_error "Symlink de Noctalia no válido"
+    if [ ! -L "${CONFIG_DIR}/DankMaterialShell/settings.json" ]; then
+        log_error "Symlink de DMS settings.json no válido"
+        return 1
+    fi
+    
+    if [ ! -L "${CONFIG_DIR}/DankMaterialShell/themes" ]; then
+        log_error "Symlink de DMS themes no válido"
         return 1
     fi
     

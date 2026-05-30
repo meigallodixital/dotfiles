@@ -1,6 +1,6 @@
 # dotfiles
 
-Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayland) con **Noctalia** como shell.
+Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayland) con **DMS (DankMaterialShell)** como shell.
 
 ## Estructura
 
@@ -20,15 +20,36 @@ Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayla
 │   ├── hosts/                  # Config específica por máquina (monitor, GPU)
 │   │   └── <hostname>.lua      # Generados automáticamente por el script
 │   └── .luarc.json             # Declara globals de Hyprland para el LSP de Lua
-└── noctalia/                    # Noctalia shell
-    ├── settings.json           # Ajustes generales
-    ├── colors.json             # Paleta de colores activa
-    ├── plugins.json            # Plugins habilitados
-    ├── colorschemes/           # Esquemas de color adicionales
-    └── plugins/                # Plugins instalados
+├── DankMaterialShell/           # DMS (DankMaterialShell) configuración versionada
+│   ├── settings.json           # Configuración: widgets, tema, animaciones
+│   └── themes/                 # Temas personalizados
+│       └── catppuccin/         # Ejemplo: tema Catppuccin
+└── .gitignore
 ```
 
 ## Instalación en una máquina nueva
+
+### Requisitos previos
+
+Instalar DMS en tu sistema:
+
+```bash
+# Fedora 41+
+sudo dnf copr enable avengemedia/dms -y
+sudo dnf install dms -y
+
+# Arch
+sudo pacman -S dms-shell
+
+# Debian/Ubuntu
+sudo add-apt-repository ppa:avengemedia/danklinux
+sudo add-apt-repository ppa:avengemedia/dms
+sudo apt update && sudo apt install dms
+
+# Compilar desde fuente
+git clone https://github.com/AvengeMedia/DankMaterialShell.git ~/dms
+cd ~/dms && sudo make install
+```
 
 ### Opción 1: Automática (recomendado)
 
@@ -39,11 +60,13 @@ cd ~/.dotfiles
 ```
 
 El script se encargará de:
+
 1. Detectar tu hardware (GPU, monitores)
 2. Validar que tengas las dependencias instaladas
 3. Generar la configuración específica de tu máquina
 4. Crear los symlinks automáticamente
 5. Hacer backup de cualquier configuración anterior
+6. Configurar DMS para que se inicie con Hyprland
 
 ### Opción 2: Manual
 
@@ -54,7 +77,6 @@ git clone <repo> ~/.dotfiles
 
 # Crear symlinks
 ln -s ~/.dotfiles/hypr ~/.config/hypr
-ln -s ~/.dotfiles/noctalia ~/.config/noctalia
 
 # Generar el archivo de host específico de tu máquina
 cp ~/.dotfiles/hypr/hosts/f5700x.lua ~/.dotfiles/hypr/hosts/$(hostname).lua
@@ -85,6 +107,7 @@ cp ~/.dotfiles/hypr/hosts/f5700x.lua ~/.dotfiles/hypr/hosts/$(hostname).lua
 ### Idempotencia
 
 El script es **idempotente**, lo que significa que:
+
 - Puede ejecutarse múltiples veces sin problemas
 - Detecta si ya está instalado
 - Solo hace cambios si algo ha cambiado
@@ -94,6 +117,7 @@ El script es **idempotente**, lo que significa que:
 ### Logs y Debugging
 
 Los logs de cada ejecución se guardan en:
+
 ```
 ~/.dotfiles/.install.log
 ```
@@ -106,7 +130,7 @@ Los logs de cada ejecución se guardan en:
 |-------|--------|
 | `Super + Return` | Abre kitty (terminal) |
 | `Super + T` | Abre kitty (terminal, alternativo) |
-| `Super + R` | Abre launcher de Noctalia |
+| `Super + R` | Abre launcher de DMS |
 | `Super + Shift + R` | Abre wofi (launcher alternativo) |
 
 ### Ventanas
@@ -144,6 +168,73 @@ Los logs de cada ejecución se guardan en:
 | `Super + Print` | Captura ventana activa |
 | `Super + Shift + Print` | Captura región seleccionada |
 
+## Configuración de DMS (DankMaterialShell)
+
+DMS se inicia automáticamente al entrar en Hyprland mediante systemd. **GNOME no se ve afectado** — DMS solo corre en Hyprland.
+
+### Versionado de configuración
+
+La configuración de DMS se versionea en `~/.dotfiles/DankMaterialShell/`:
+
+```
+~/.dotfiles/DankMaterialShell/
+├── settings.json           # Configuración principal (widgets, tema, animaciones)
+└── themes/                 # Temas personalizados
+    └── catppuccin/         # Ejemplo: tema Catppuccin
+```
+
+Estos archivos tienen symlinks en `~/.config/DankMaterialShell/`:
+- `~/.config/DankMaterialShell/settings.json` → `~/.dotfiles/DankMaterialShell/settings.json`
+- `~/.config/DankMaterialShell/themes` → `~/.dotfiles/DankMaterialShell/themes`
+
+Cuando cambias configuración en el GUI de DMS:
+1. DMS actualiza `~/.config/DankMaterialShell/settings.json`
+2. El symlink hace que se escriba en `~/.dotfiles/DankMaterialShell/settings.json`
+3. Los cambios se versionan automáticamente en git
+
+### Cambiar tema en DMS
+
+La manera recomendada es usar el GUI de DMS:
+- Abre DMS (Super + R)
+- Ve a Configuración → Tema/Colores
+- Selecciona tema y aplica
+
+Los cambios se guardan automáticamente en `settings.json` y se versionan.
+
+### Integración con systemd
+
+DMS se gestiona via systemd de usuario:
+
+```bash
+# Ver estado
+systemctl --user status dms
+
+# Ver logs
+journalctl --user -u dms -f
+
+# Reiniciar DMS
+systemctl --user restart dms
+
+# Ver info del sistema y DMS
+dms doctor
+```
+
+### ¿Por qué solo en Hyprland?
+
+DMS está configurado con una condición systemd en:
+
+```
+~/.config/systemd/user/dms.service.d/hyprland-only.conf
+
+[Unit]
+ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
+
+[Service]
+# Sin cambios - usar defaults
+```
+
+Esto significa que DMS **solo se inicia si está establecida la variable `HYPRLAND_INSTANCE_SIGNATURE`**, que solo existe cuando ejecutas Hyprland. GNOME no tendrá esta variable, así que DMS nunca se iniciará en GNOME.
+
 ## Cambiar el tema visual
 
 Editar `hypr/theme.lua` y recargar Hyprland:
@@ -176,14 +267,16 @@ El script validará automáticamente estas dependencias:
 | `hyprland` | Compositor Wayland | Sí |
 | `hyprctl` | Control de Hyprland | Sí |
 | `hyprshot` | Capturas de pantalla | Sí |
-| `noctalia` | Shell de escritorio | Sí |
+| `dms` | DankMaterialShell - Shell de escritorio | Sí |
 | `kitty` | Terminal | No (recomendada) |
 | `wofi` | Lanzador de aplicaciones | No (recomendada) |
+| `dgop` | Monitor de recursos para DMS | No (recomendada) |
+| `matugen` | Generador de temas Material para DMS | No (recomendada) |
 
 En Fedora, instalar todo de una vez:
 
 ```bash
-sudo dnf install hyprland hyprshot noctalia kitty wofi
+sudo dnf install hyprland hyprshot dms kitty wofi dgop matugen
 ```
 
 ## Actualizar la configuración
@@ -219,4 +312,5 @@ Estos archivos se ignoran automáticamente y no aparecen en `git status`.
 ## Referentes
 
 - [Hyprland](https://hyprland.org) — Compositor Wayland
-- [Noctalia](https://github.com/anomalyco/noctalia) — Shell de escritorio
+- [DankMaterialShell](https://danklinux.com) — Shell de escritorio moderno basado en Quickshell
+- [Material Design 3](https://m3.material.io) — Sistema de diseño de Google

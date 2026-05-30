@@ -4,7 +4,7 @@ local mod = "SUPER"
 -- Lanzadores y aplicaciones
 hl.bind(mod .. " + Return", hl.dsp.exec_cmd("kitty"))
 hl.bind(mod .. " + T",      hl.dsp.exec_cmd("kitty"))
-hl.bind(mod .. " + R",      hl.dsp.exec_cmd("qs -c noctalia-shell ipc call launcher toggle"))
+hl.bind(mod .. " + R",      hl.dsp.exec_cmd("dms panel launcher toggle"))
 hl.bind(mod .. " + SHIFT + R", hl.dsp.exec_cmd("wofi --show run"))
 hl.bind(mod .. " + Q",      hl.dsp.window.close())
 hl.bind(mod .. " + M",      hl.dsp.exit())

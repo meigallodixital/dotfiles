@@ -3,6 +3,4 @@
 -- hl.exec_once("dunst")
 -- hl.exec_once("nm-applet")
 
-hl.on("hyprland.start", function()
-    hl.exec_cmd("qs -c noctalia-shell")
-end)
+-- DMS se inicia automáticamente vía systemd (no necesario autoload)
