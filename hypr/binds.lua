@@ -53,3 +53,8 @@ hl.bind(mod .. " + CTRL + left",  hl.dsp.window.move({ workspace = "-1" }))
 -- Mover/redimensionar ventanas flotantes con el ratón
 hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+-- Capturas con hyprshot
+hl.bind("PRINT",                 hl.dsp.exec_cmd("hyprshot -m output"))
+hl.bind(mod .. " + PRINT",       hl.dsp.exec_cmd("hyprshot -m window"))
+hl.bind(mod .. " + SHIFT + PRINT", hl.dsp.exec_cmd("hyprshot -m region"))
