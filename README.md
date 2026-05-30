@@ -98,6 +98,52 @@ Los logs de cada ejecución se guardan en:
 ~/.dotfiles/.install.log
 ```
 
+## Atajos de teclado (Hyprland)
+
+### Aplicaciones
+
+| Atajo | Acción |
+|-------|--------|
+| `Super + Return` | Abre kitty (terminal) |
+| `Super + T` | Abre kitty (terminal, alternativo) |
+| `Super + R` | Abre launcher de Noctalia |
+| `Super + Shift + R` | Abre wofi (launcher alternativo) |
+
+### Ventanas
+
+| Atajo | Acción |
+|-------|--------|
+| `Super + Q` | Cierra ventana |
+| `Super + F` | Fullscreen |
+| `Super + V` | Toggle ventana flotante |
+| `Super + M` | Salir de sesión |
+
+### Navegación
+
+| Atajo | Acción |
+|-------|--------|
+| `Super + H/L/K/J` | Navegar entre ventanas (izq/der/arriba/abajo) |
+| `Super + Flechas` | Navegar entre ventanas (alternativo) |
+| `Super + 1-9` | Ir a workspace 1-9 |
+| `Super + Ctrl + Shift + Flechas` | Cambiar workspace |
+
+### Mover ventanas
+
+| Atajo | Acción |
+|-------|--------|
+| `Super + Shift + H/L/K/J` | Mover ventana (izq/der/arriba/abajo) |
+| `Super + Shift + Flechas` | Mover ventana (alternativo) |
+| `Super + Shift + 1-9` | Mover ventana a workspace 1-9 |
+| `Super + Ctrl + Flechas` | Mover ventana con workspace |
+
+### Capturas de pantalla
+
+| Atajo | Acción |
+|-------|--------|
+| `Print` | Captura pantalla completa |
+| `Super + Print` | Captura ventana activa |
+| `Super + Shift + Print` | Captura región seleccionada |
+
 ## Cambiar el tema visual
 
 Editar `hypr/theme.lua` y recargar Hyprland:
@@ -131,13 +177,13 @@ El script validará automáticamente estas dependencias:
 | `hyprctl` | Control de Hyprland | Sí |
 | `hyprshot` | Capturas de pantalla | Sí |
 | `noctalia` | Shell de escritorio | Sí |
-| `foot` | Terminal | No (recomendada) |
+| `kitty` | Terminal | No (recomendada) |
 | `wofi` | Lanzador de aplicaciones | No (recomendada) |
 
 En Fedora, instalar todo de una vez:
 
 ```bash
-sudo dnf install hyprland hyprshot noctalia foot wofi
+sudo dnf install hyprland hyprshot noctalia kitty wofi
 ```
 
 ## Actualizar la configuración
