@@ -21,8 +21,9 @@ Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayla
 │   │   └── <hostname>.lua      # Generados automáticamente por el script
 │   └── .luarc.json             # Declara globals de Hyprland para el LSP de Lua
 ├── DankMaterialShell/           # DMS (DankMaterialShell) configuración versionada
-│   ├── settings.json           # Configuración: widgets, tema, animaciones
-│   └── themes/                 # Temas personalizados
+│   ├── settings-f5700x.json    # Configuración de esta máquina (por hostname)
+│   ├── settings-<hostname>.json # Configuración de otras máquinas
+│   └── themes/                 # Temas personalizados (compartido global)
 │       └── catppuccin/         # Ejemplo: tema Catppuccin
 └── .gitignore
 ```
@@ -178,19 +179,30 @@ La configuración de DMS se versionea en `~/.dotfiles/DankMaterialShell/`:
 
 ```
 ~/.dotfiles/DankMaterialShell/
-├── settings.json           # Configuración principal (widgets, tema, animaciones)
-└── themes/                 # Temas personalizados
-    └── catppuccin/         # Ejemplo: tema Catppuccin
+├── settings-f5700x.json        # Configuración de esta máquina (por hostname)
+├── settings-<hostname>.json    # Configuración de otras máquinas
+└── themes/                     # Temas personalizados (compartido global)
+    └── catppuccin/             # Ejemplo: tema Catppuccin
 ```
 
-Estos archivos tienen symlinks en `~/.config/DankMaterialShell/`:
-- `~/.config/DankMaterialShell/settings.json` → `~/.dotfiles/DankMaterialShell/settings.json`
-- `~/.config/DankMaterialShell/themes` → `~/.dotfiles/DankMaterialShell/themes`
+**Importante: `settings.json` es específico por máquina**
+
+Cada máquina versionea su propia configuración de DMS:
+- En **f5700x**: `settings-f5700x.json`
+- En **otra-maquina**: `settings-otra-maquina.json`
+
+Los temas en `themes/` son compartidos entre todas las máquinas.
+
+### Symlinks automáticos
+
+El instalador crea automáticamente:
+- `~/.config/DankMaterialShell/settings.json` → `~/.dotfiles/DankMaterialShell/settings-<hostname>.json` (específico de la máquina)
+- `~/.config/DankMaterialShell/themes` → `~/.dotfiles/DankMaterialShell/themes` (global)
 
 Cuando cambias configuración en el GUI de DMS:
 1. DMS actualiza `~/.config/DankMaterialShell/settings.json`
-2. El symlink hace que se escriba en `~/.dotfiles/DankMaterialShell/settings.json`
-3. Los cambios se versionan automáticamente en git
+2. El symlink hace que se escriba en `~/.dotfiles/DankMaterialShell/settings-<hostname>.json`
+3. Los cambios se versionan automáticamente en git (solo de tu máquina)
 
 ### Cambiar tema en DMS
 

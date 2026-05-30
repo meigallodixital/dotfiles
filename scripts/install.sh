@@ -289,8 +289,30 @@ safe_symlink() {
 create_symlinks() {
     log_section "Creando symlinks"
     
+    local hostname=$(detect_hostname)
+    
     safe_symlink "${DOTFILES_DIR}/hypr" "${CONFIG_DIR}/hypr" "Hyprland config" || return 1
-    safe_symlink "${DOTFILES_DIR}/DankMaterialShell/settings.json" "${CONFIG_DIR}/DankMaterialShell/settings.json" "DMS settings" || return 1
+    
+    # DMS settings.json por máquina
+    local dms_settings_dotfiles="${DOTFILES_DIR}/DankMaterialShell/settings-${hostname}.json"
+    local dms_settings_config="${CONFIG_DIR}/DankMaterialShell/settings.json"
+    
+    # Si settings-<hostname>.json no existe en dotfiles, copiar desde config
+    if [ ! -f "$dms_settings_dotfiles" ]; then
+        if [ -f "$dms_settings_config" ]; then
+            log_info "Copiando settings.json de esta máquina a dotfiles con nombre de hostname..."
+            mkdir -p "$(dirname "$dms_settings_dotfiles")"
+            cp "$dms_settings_config" "$dms_settings_dotfiles"
+            log_success "Settings guardado como settings-${hostname}.json"
+        else
+            log_warn "No se encontró settings.json en $dms_settings_config"
+        fi
+    fi
+    
+    # Crear symlink de config a dotfiles
+    safe_symlink "$dms_settings_dotfiles" "$dms_settings_config" "DMS settings (${hostname})" || return 1
+    
+    # DMS themes (compartido, global)
     safe_symlink "${DOTFILES_DIR}/DankMaterialShell/themes" "${CONFIG_DIR}/DankMaterialShell/themes" "DMS themes" || return 1
     
     # Configurar systemd override para DMS (solo en Hyprland, no en GNOME)
@@ -317,6 +339,8 @@ EOF
 validate_installation() {
     log_info "Validando instalación..."
     
+    local hostname=$(detect_hostname)
+    
     if [ ! -L "${CONFIG_DIR}/hypr" ]; then
         log_error "Symlink de Hyprland no válido"
         return 1
@@ -329,6 +353,15 @@ validate_installation() {
     
     if [ ! -L "${CONFIG_DIR}/DankMaterialShell/themes" ]; then
         log_error "Symlink de DMS themes no válido"
+        return 1
+    fi
+    
+    # Verificar que settings.json apunta al archivo correcto de hostname
+    local expected_target="${DOTFILES_DIR}/DankMaterialShell/settings-${hostname}.json"
+    local actual_target=$(readlink "${CONFIG_DIR}/DankMaterialShell/settings.json" 2>/dev/null)
+    
+    if [ "$actual_target" != "$expected_target" ]; then
+        log_error "Symlink de settings.json apunta a $actual_target, debería apuntar a $expected_target"
         return 1
     fi
     
