@@ -1,0 +1,16 @@
+# Archivos generados por el script de instalación
+.backups/
+.install.log
+.install-state
+
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Editor temporales
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
