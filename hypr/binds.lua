@@ -1,9 +1,11 @@
 -- ── Atajos de teclado ────────────────────────
 local mod = "SUPER"
 
--- Lanzadores
-hl.bind(mod .. " + Return", hl.dsp.exec_cmd("foot"))
-hl.bind(mod .. " + D",      hl.dsp.exec_cmd("wofi --show run"))
+-- Lanzadores y aplicaciones
+hl.bind(mod .. " + Return", hl.dsp.exec_cmd("kitty"))
+hl.bind(mod .. " + T",      hl.dsp.exec_cmd("kitty"))
+hl.bind(mod .. " + R",      hl.dsp.exec_cmd("qs -c noctalia-shell ipc call launcher toggle"))
+hl.bind(mod .. " + SHIFT + R", hl.dsp.exec_cmd("wofi --show run"))
 hl.bind(mod .. " + Q",      hl.dsp.window.close())
 hl.bind(mod .. " + M",      hl.dsp.exit())
 hl.bind(mod .. " + F",      hl.dsp.window.fullscreen())
