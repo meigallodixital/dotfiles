@@ -123,7 +123,7 @@ check_basic_deps() {
     
     local missing_deps=()
     
-    for cmd in git ln mkdir symlink; do
+    for cmd in git ln mkdir; do
         if ! command_exists "$cmd"; then
             missing_deps+=("$cmd")
         fi
