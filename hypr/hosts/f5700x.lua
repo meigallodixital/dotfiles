@@ -1,5 +1,6 @@
 -- ── Hardware: f5700x ─────────────────────────
 -- GPU: NVIDIA
+-- Monitores detectados: 1
 
 hl.monitor({
     output   = "",          -- "" aplica a todos los monitores conectados
