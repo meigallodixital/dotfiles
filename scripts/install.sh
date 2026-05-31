@@ -216,26 +216,27 @@ restore_backup() {
 }
 
 # ─────────────────────────────────────────────────────────────
-# Generación dinámica de host.lua
+# Generación dinámica de host.conf
 # ─────────────────────────────────────────────────────────────
 
 generate_host_file() {
     local hostname="$1"
     local gpu_type="$2"
     local monitor_count="$3"
-    local target_file="${DOTFILES_DIR}/hypr/hosts/${hostname}.lua"
+    local target_file="${DOTFILES_DIR}/hypr/hosts/current.conf"
+    local host_file="${DOTFILES_DIR}/hypr/hosts/${hostname}.conf"
     
     log_info "Generando archivo de host: $target_file"
     
     # Determinar configuración de GPU
     local gpu_config=""
     if [ "$gpu_type" = "NVIDIA" ]; then
-        gpu_config="dofile(os.getenv(\"HOME\") .. \"/.config/hypr/nvidia.lua\")"
+        gpu_config="source = ~/.config/hypr/nvidia.conf"
     fi
     
     # Interpolar template
     local content
-    content=$(cat "${DOTFILES_DIR}/scripts/templates/host.lua")
+    content=$(cat "${DOTFILES_DIR}/scripts/templates/host.conf")
     content="${content//\{\{HOSTNAME\}\}/$hostname}"
     content="${content//\{\{GPU_TYPE\}\}/$gpu_type}"
     content="${content//\{\{MONITOR_COUNT\}\}/$monitor_count}"
@@ -244,12 +245,49 @@ generate_host_file() {
     # Escribir archivo
     if [ "$DRY_RUN" -eq 1 ]; then
         log_info "DRY RUN: Se escribiría en $target_file"
+        log_info "DRY RUN: Se escribiría copia por hostname en $host_file"
         echo "$content"
         return 0
     fi
     
     echo "$content" > "$target_file"
+    echo "$content" > "$host_file"
     log_success "Archivo de host generado"
+}
+
+validate_hyprland_config_files() {
+    local hypr_config_dir="$1"
+
+    if [ ! -f "${hypr_config_dir}/hyprland.conf" ]; then
+        log_error "No existe hyprland.conf clásico"
+        return 1
+    fi
+
+    if [ -f "${hypr_config_dir}/hyprland.lua" ]; then
+        log_error "Existe hyprland.lua en la raíz; Hyprland arrancaría en modo Lua"
+        return 1
+    fi
+
+    if ! grep -q "source = ~/.config/hypr/hosts/current.conf" "${hypr_config_dir}/hyprland.conf"; then
+        log_error "hyprland.conf no carga hosts/current.conf"
+        return 1
+    fi
+
+    if [ ! -f "${hypr_config_dir}/hosts/current.conf" ]; then
+        log_error "No existe configuración de host activa: ${hypr_config_dir}/hosts/current.conf"
+        return 1
+    fi
+
+    if grep -Eq "^[[:space:]]*xp_mode[[:space:]]*=[[:space:]]*true" "${hypr_config_dir}/hyprland.conf"; then
+        log_error "render.xp_mode=true rompe el fondo de DMS"
+        return 1
+    fi
+
+    if ! grep -Eq "^[[:space:]]*xp_mode[[:space:]]*=[[:space:]]*false" "${hypr_config_dir}/hyprland.conf"; then
+        log_warn "No se encontró render.xp_mode=false; DMS puede no mostrar el fondo"
+    fi
+
+    return 0
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -405,6 +443,8 @@ validate_installation() {
         log_error "Symlink de Hyprland no válido"
         return 1
     fi
+
+    validate_hyprland_config_files "${CONFIG_DIR}/hypr" || return 1
     
     if [ ! -L "${CONFIG_DIR}/DankMaterialShell/settings.json" ]; then
         log_error "Symlink de DMS settings.json no válido"
@@ -526,7 +566,13 @@ main() {
     if [ "$CHECK_ONLY" -eq 1 ]; then
         log_section "Validando dependencias (CHECK_ONLY)"
         check_hyprland_deps
-        exit $?
+        deps_status=$?
+        validate_hyprland_config_files "${DOTFILES_DIR}/hypr"
+        config_status=$?
+        if [ "$deps_status" -ne 0 ] || [ "$config_status" -ne 0 ]; then
+            exit 1
+        fi
+        exit 0
     fi
     
     # Clonar repo si no existe
@@ -557,7 +603,7 @@ main() {
         if prompt_yes_no "¿Usar configuración propuesta para los monitores?"; then
             log_success "Usando configuración de monitores propuesta"
         else
-            log_warn "Por favor edita manualmente: ${DOTFILES_DIR}/hypr/hosts/${hostname}.lua"
+            log_warn "Por favor edita manualmente: ${DOTFILES_DIR}/hypr/hosts/current.conf"
         fi
     fi
     

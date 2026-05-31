@@ -9,18 +9,18 @@ Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayla
 ├── scripts/
 │   ├── install.sh              # Script de instalación idempotente
 │   └── templates/
-│       └── host.lua            # Template para generar configuración por máquina
+│       └── host.conf           # Template para generar configuración por máquina
 ├── hypr/                        # Hyprland (compositor Wayland)
-│   ├── hyprland.lua            # Config principal: layout, input, render
-│   ├── theme.lua               # Colores y espaciados (editar aquí para cambiar el look)
-│   ├── nvidia.lua              # Variables de entorno y ajustes específicos de NVIDIA
-│   ├── animations.lua          # Curvas bezier y animaciones
-│   ├── autostart.lua           # Aplicaciones que arrancan con la sesión
-│   ├── binds.lua               # Atajos de teclado
+│   ├── hyprland.conf           # Config principal: layout, input, render
+│   ├── theme.conf              # Colores y espaciados (editar aquí para cambiar el look)
+│   ├── nvidia.conf             # Variables de entorno y ajustes específicos de NVIDIA
+│   ├── animations.conf         # Curvas bezier y animaciones
+│   ├── autostart.conf          # Aplicaciones que arrancan con la sesión
+│   ├── binds.conf              # Atajos de teclado
 │   ├── dms/                    # Generado por DMS en runtime, ignorado por git
 │   ├── hosts/                  # Config específica por máquina (monitor, GPU)
-│   │   └── <hostname>.lua      # Generados automáticamente por el script
-│   └── .luarc.json             # Declara globals de Hyprland para el LSP de Lua
+│   │   ├── current.conf        # Host activo cargado por hyprland.conf
+│   │   └── <hostname>.conf     # Copia por máquina generada automáticamente
 ├── DankMaterialShell/           # DMS (DankMaterialShell) configuración versionada
 │   ├── settings-f5700x.json    # Configuración de esta máquina (por hostname)
 │   ├── settings-<hostname>.json # Configuración de otras máquinas
@@ -81,9 +81,19 @@ git clone <repo> ~/.dotfiles
 ln -s ~/.dotfiles/hypr ~/.config/hypr
 
 # Generar el archivo de host específico de tu máquina
-cp ~/.dotfiles/hypr/hosts/f5700x.lua ~/.dotfiles/hypr/hosts/$(hostname).lua
+cp ~/.dotfiles/hypr/hosts/f5700x.conf ~/.dotfiles/hypr/hosts/current.conf
 # Editar el fichero con la config de monitor y GPU de tu máquina
 ```
+
+## Hyprland y DMS
+
+La configuración activa de Hyprland usa el formato clásico `hyprland.conf`. No se mantiene configuración Lua porque DMS llama a Hyprland con dispatch clásico, por ejemplo `workspace 2`; con la API Lua de Hyprland 0.55 esa llamada falla con un error de sintaxis Lua y los botones de workspace de DMS dejan de funcionar.
+
+`render.xp_mode` debe estar desactivado. DMS dibuja el fondo como una capa Wayland `background`; `xp_mode = true` puede impedir que esa capa se vea y rompe el cambio de fondo desde DMS. El instalador lo valida en `--check`.
+
+Es importante que no exista `~/.config/hypr/hyprland.lua`, porque Hyprland 0.55 prioriza el modo Lua si ese fichero está presente.
+
+Si la sesión ya estaba iniciada en modo Lua, `hyprctl reload` no cambia el proveedor de configuración. Hay que cerrar la sesión de Hyprland y volver a entrar para que `hyprctl systeminfo` deje de mostrar `configProvider: lua` y `hyprctl dispatch workspace 2` vuelva a aceptar la sintaxis clásica.
 
 ## Uso del Script de Instalación
 
@@ -234,7 +244,7 @@ dms doctor
 
 ### Arranque real de DMS en Hyprland
 
-DMS arranca como servicio de usuario de systemd. No debe arrancarse desde `hypr/autostart.lua` con `exec_once`, porque eso deja procesos fuera de systemd y puede provocar el error de Quickshell `An instance of this configuration is already running`.
+DMS arranca como servicio de usuario de systemd. No debe arrancarse desde `hypr/autostart.conf` con `exec-once`, porque eso deja procesos fuera de systemd y puede provocar el error de Quickshell `An instance of this configuration is already running`.
 
 La unidad activa está en:
 
@@ -285,15 +295,13 @@ Si eso no basta, localizar la instancia huérfana con `pgrep -ax dms; pgrep -ax 
 
 En NVIDIA 595 con Hyprland 0.55, `cursor.no_hardware_cursors = 1` provocaba pantalla negra con doble cursor, uno móvil y otro congelado. La configuración real usa cursor hardware:
 
-```lua
-hl.config({
-    cursor = {
-        no_hardware_cursors = 0,
-    },
-})
+```conf
+cursor {
+    no_hardware_cursors = 0
+}
 ```
 
-Esto está en `hypr/nvidia.lua`.
+Esto está en `hypr/nvidia.conf`.
 
 ### Ficheros generados por DMS en Hyprland
 
@@ -309,7 +317,7 @@ Como `~/.config/hypr` apunta a `~/.dotfiles/hypr`, esos ficheros aparecen dentro
 
 ## Cambiar el tema visual
 
-Editar `hypr/theme.lua` y recargar Hyprland:
+Editar `hypr/theme.conf` y recargar Hyprland:
 
 ```bash
 hyprctl reload
@@ -326,7 +334,7 @@ El script genera automáticamente el archivo host cuando se ejecuta por primera 
 Si necesitas regenerar la configuración:
 
 ```bash
-cp ~/.dotfiles/scripts/templates/host.lua ~/.dotfiles/hypr/hosts/$(hostname).lua
+cp ~/.dotfiles/scripts/templates/host.conf ~/.dotfiles/hypr/hosts/current.conf
 # Editar según sea necesario
 ```
 

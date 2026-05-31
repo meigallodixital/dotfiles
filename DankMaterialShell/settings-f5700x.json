@@ -435,6 +435,10 @@
           "enabled": true
         },
         {
+          "id": "nvidiaGpuMonitor",
+          "enabled": true
+        },
+        {
           "id": "cpuUsage",
           "enabled": true
         },
