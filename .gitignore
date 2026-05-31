@@ -3,6 +3,9 @@
 .install.log
 .install-state
 
+# Archivos autogenerados por DMS dentro del symlink ~/.config/hypr -> ~/.dotfiles/hypr
+hypr/dms/
+
 # macOS
 .DS_Store
 *.swp

@@ -17,6 +17,7 @@ Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayla
 │   ├── animations.lua          # Curvas bezier y animaciones
 │   ├── autostart.lua           # Aplicaciones que arrancan con la sesión
 │   ├── binds.lua               # Atajos de teclado
+│   ├── dms/                    # Generado por DMS en runtime, ignorado por git
 │   ├── hosts/                  # Config específica por máquina (monitor, GPU)
 │   │   └── <hostname>.lua      # Generados automáticamente por el script
 │   └── .luarc.json             # Declara globals de Hyprland para el LSP de Lua
@@ -231,21 +232,80 @@ systemctl --user restart dms
 dms doctor
 ```
 
-### ¿Por qué solo en Hyprland?
+### Arranque real de DMS en Hyprland
 
-DMS está configurado con una condición systemd en:
+DMS arranca como servicio de usuario de systemd. No debe arrancarse desde `hypr/autostart.lua` con `exec_once`, porque eso deja procesos fuera de systemd y puede provocar el error de Quickshell `An instance of this configuration is already running`.
+
+La unidad activa está en:
 
 ```
-~/.config/systemd/user/dms.service.d/hyprland-only.conf
+~/.config/systemd/user/dms.service
+```
 
-[Unit]
-ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
+La unidad está habilitada en `default.target`, no solo en `graphical-session.target`:
 
+```ini
+[Install]
+WantedBy=graphical-session.target
+WantedBy=default.target
+```
+
+Motivo: en esta instalación `graphical-session.target` puede aparecer inactivo aunque Hyprland esté funcionando. Si DMS depende solo de ese target, systemd no llega ni a intentar arrancarlo tras iniciar sesión.
+
+Para evitar que DMS arranque antes que Hyprland, la unidad espera a que exista un proceso real `Hyprland`:
+
+```ini
 [Service]
-# Sin cambios - usar defaults
+Type=dbus
+BusName=org.freedesktop.Notifications
+ExecStartPre=/usr/bin/sh -c 'for i in $(seq 1 50); do /usr/bin/pgrep -xu "$USER" Hyprland >/dev/null && exit 0; sleep 0.2; done; exit 1'
+ExecStart=/usr/bin/dms run --session
 ```
 
-Esto significa que DMS **solo se inicia si está establecida la variable `HYPRLAND_INSTANCE_SIGNATURE`**, que solo existe cuando ejecutas Hyprland. GNOME no tendrá esta variable, así que DMS nunca se iniciará en GNOME.
+No usar `ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE` como filtro principal: el entorno de `systemd --user` puede conservar variables antiguas de Hyprland incluso estando en GNOME, así que no es una señal fiable.
+
+Si DMS no aparece tras entrar en Hyprland, comprobar:
+
+```bash
+systemctl --user status dms.service
+journalctl --user -u dms.service -b
+pgrep -ax dms
+pgrep -ax qs
+```
+
+Si el log muestra `An instance of this configuration is already running`, hay una instancia antigua de `dms`/`qs` fuera del servicio. Hay que pararla y volver a arrancar el servicio:
+
+```bash
+systemctl --user restart dms.service
+```
+
+Si eso no basta, localizar la instancia huérfana con `pgrep -ax dms; pgrep -ax qs` y terminar solo esos procesos antes de arrancar de nuevo `dms.service`.
+
+### NVIDIA y cursor
+
+En NVIDIA 595 con Hyprland 0.55, `cursor.no_hardware_cursors = 1` provocaba pantalla negra con doble cursor, uno móvil y otro congelado. La configuración real usa cursor hardware:
+
+```lua
+hl.config({
+    cursor = {
+        no_hardware_cursors = 0,
+    },
+})
+```
+
+Esto está en `hypr/nvidia.lua`.
+
+### Ficheros generados por DMS en Hyprland
+
+DMS puede escribir ficheros bajo `~/.config/hypr/dms/`, por ejemplo:
+
+```text
+~/.config/hypr/dms/colors.conf
+~/.config/hypr/dms/layout.conf
+~/.config/hypr/dms/windowrules.conf
+```
+
+Como `~/.config/hypr` apunta a `~/.dotfiles/hypr`, esos ficheros aparecen dentro del repo local. Son artefactos generados en runtime por DMS y no deben versionarse. Por eso `.gitignore` ignora `hypr/dms/`.
 
 ## Cambiar el tema visual
 

@@ -123,7 +123,7 @@ check_basic_deps() {
     
     local missing_deps=()
     
-    for cmd in git ln mkdir; do
+    for cmd in git ln mkdir systemctl pgrep; do
         if ! command_exists "$cmd"; then
             missing_deps+=("$cmd")
         fi
@@ -144,7 +144,7 @@ check_hyprland_deps() {
     local missing_deps=()
     local optional_deps=()
     
-    for cmd in hyprland hyprctl hyprshot; do
+    for cmd in hyprland hyprctl hyprshot dms; do
         if ! command_exists "$cmd"; then
             missing_deps+=("$cmd")
         fi
@@ -179,6 +179,11 @@ backup_existing_config() {
     
     if [ ! -d "$CONFIG_DIR/hypr" ]; then
         log_info "No hay configuración anterior que respaldar"
+        return 0
+    fi
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        log_info "DRY RUN: se crearía backup en $backup_path"
         return 0
     fi
     
@@ -315,20 +320,75 @@ create_symlinks() {
     # DMS themes (compartido, global)
     safe_symlink "${DOTFILES_DIR}/DankMaterialShell/themes" "${CONFIG_DIR}/DankMaterialShell/themes" "DMS themes" || return 1
     
-    # Configurar systemd override para DMS (solo en Hyprland, no en GNOME)
-    local dms_override_dir="${CONFIG_DIR}/systemd/user/dms.service.d"
-    mkdir -p "$dms_override_dir"
-    cat > "$dms_override_dir/hyprland-only.conf" << 'EOF'
-[Unit]
-# Solo iniciar DMS si estamos en Hyprland, no en GNOME
-ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
-
-[Service]
-# Sin cambios - usar defaults
-EOF
-    log_success "Configuración systemd para DMS creada"
+    configure_dms_systemd || return 1
     
     log_success "Symlinks creados correctamente"
+    return 0
+}
+
+configure_dms_systemd() {
+    log_info "Configurando DMS como servicio systemd de usuario..."
+
+    local systemd_user_dir="${CONFIG_DIR}/systemd/user"
+    local dms_service="${systemd_user_dir}/dms.service"
+    local dms_override_dir="${systemd_user_dir}/dms.service.d"
+    local dms_override="${dms_override_dir}/hyprland-only.conf"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        log_info "DRY RUN: se escribiría $dms_service"
+        log_info "DRY RUN: se escribiría $dms_override"
+        log_info "DRY RUN: systemctl --user daemon-reload && systemctl --user enable dms.service"
+        return 0
+    fi
+
+    mkdir -p "$systemd_user_dir" "$dms_override_dir"
+
+    cat > "$dms_service" << 'EOF'
+[Unit]
+Description=Dank Material Shell (DMS)
+PartOf=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.Notifications
+ExecStartPre=/usr/bin/sh -c 'for i in $(seq 1 50); do /usr/bin/pgrep -xu "$USER" Hyprland >/dev/null && exit 0; sleep 0.2; done; exit 1'
+ExecStart=/usr/bin/dms run --session
+ExecReload=/usr/bin/pkill -USR1 -x dms
+Restart=on-failure
+RestartSec=1.23
+TimeoutStopSec=10
+
+[Install]
+WantedBy=graphical-session.target
+WantedBy=default.target
+EOF
+
+    cat > "$dms_override" << 'EOF'
+[Unit]
+# ConditionEnvironment no es fiable aquí: el entorno de systemd --user puede
+# conservar variables antiguas de Hyprland incluso estando en GNOME.
+ConditionEnvironment=
+# En esta sesión Hyprland puede seguir vivo aunque graphical-session.target
+# aparezca inactivo; no debe bloquear el arranque de DMS.
+Requisite=
+After=
+
+[Service]
+# La unidad principal espera a que Hyprland exista antes de arrancar DMS.
+ExecCondition=
+EOF
+
+    systemctl --user daemon-reload || {
+        log_error "No se pudo recargar systemd --user"
+        return 1
+    }
+
+    systemctl --user enable dms.service || {
+        log_error "No se pudo habilitar dms.service"
+        return 1
+    }
+
+    log_success "DMS configurado como servicio systemd de usuario"
     return 0
 }
 
@@ -362,6 +422,21 @@ validate_installation() {
     
     if [ "$actual_target" != "$expected_target" ]; then
         log_error "Symlink de settings.json apunta a $actual_target, debería apuntar a $expected_target"
+        return 1
+    fi
+
+    if [ ! -f "${CONFIG_DIR}/systemd/user/dms.service" ]; then
+        log_error "No existe la unidad de usuario de DMS"
+        return 1
+    fi
+
+    if [ ! -L "${CONFIG_DIR}/systemd/user/default.target.wants/dms.service" ]; then
+        log_error "DMS no está habilitado en default.target"
+        return 1
+    fi
+
+    if grep -q "ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE" "${CONFIG_DIR}/systemd/user/dms.service" "${CONFIG_DIR}/systemd/user/dms.service.d/hyprland-only.conf" 2>/dev/null; then
+        log_error "DMS conserva la condición obsoleta HYPRLAND_INSTANCE_SIGNATURE"
         return 1
     fi
     
