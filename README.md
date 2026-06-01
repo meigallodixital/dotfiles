@@ -20,21 +20,20 @@ Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayla
 │   ├── hosts/                  # Config específica por máquina (monitor, GPU)
 │   │   └── <hostname>.lua      # Archivo por máquina
 │   └── .luarc.json             # Declara globals de Hyprland para el LSP de Lua
-└── noctalia/                    # Noctalia shell
+└── noctalia/                    # Noctalia shell (configuración directa sin symlinks)
     ├── machines/
     │   ├── f5700x/             # Perfil completo de la máquina f5700x
     │   │   ├── settings.json
     │   │   ├── colors.json
     │   │   ├── plugins.json
-    │   │   ├── colorschemes/
     │   │   └── plugins/
     │   └── msi-work/           # Perfil completo de la máquina msi-work
     │       ├── settings.json
     │       ├── colors.json
     │       ├── plugins.json
-    │       ├── colorschemes/
     │       └── plugins/
-    └── (symlink local) ~/.config/noctalia -> ~/.dotfiles/noctalia/machines/<hostname>
+    └── La variable NOCTALIA_CONFIG_DIR (en autostart.lua) apunta
+        directamente al perfil de la máquina, sin symlinks en ~/.config.
 ```
 
 ## Instalación en una máquina nueva
@@ -50,8 +49,8 @@ cd ~/.dotfiles
 El script se encargará de:
 1. Detectar tu hardware (GPU, monitores)
 2. Validar que tengas las dependencias instaladas
-3. Crear o preparar el perfil de Noctalia de tu máquina
-4. Crear los symlinks automáticamente
+3. Preparar el perfil de Noctalia para tu máquina (sin symlinks, usa NOCTALIA_CONFIG_DIR)
+4. Crear los symlinks de Hyprland automáticamente
 5. Hacer backup de cualquier configuración anterior
 
 ### Opción 2: Manual
@@ -63,10 +62,10 @@ git clone <repo> ~/.dotfiles
 
 # Crear symlinks
 ln -s ~/.dotfiles/hypr ~/.config/hypr
-ln -s ~/.dotfiles/noctalia/machines/$(hostname) ~/.config/noctalia
 
-# Editar el perfil de Noctalia de tu máquina
-# ~/.dotfiles/noctalia/machines/$(hostname)/
+# Noctalia usa NOCTALIA_CONFIG_DIR (ver hypr/autostart.lua),
+# no necesita symlinks en ~/.config. Asegúrate de que no exista:
+rm -rf ~/.config/noctalia
 ```
 
 ## Uso del Script de Instalación

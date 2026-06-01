@@ -1,0 +1,30 @@
+{
+  "providers": {
+    "claude": {
+      "enabled": true,
+      "statsPath": "~/.claude/stats-cache.json",
+      "credentialsPath": "~/.claude/.credentials.json"
+    },
+    "codex": {
+      "enabled": false
+    },
+    "copilot": {
+      "enabled": true
+    },
+    "gemini": {
+      "enabled": false
+    },
+    "openrouter": {
+      "enabled": false,
+      "apiKey": ""
+    },
+    "zen": {
+      "enabled": false,
+      "apiKey": ""
+    }
+  },
+  "barDisplayMode": "active",
+  "barCycleIntervalSec": 5,
+  "barMetric": "tokens",
+  "refreshIntervalSec": 30
+}

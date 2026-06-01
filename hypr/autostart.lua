@@ -4,5 +4,5 @@
 -- hl.exec_once("nm-applet")
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("qs -c noctalia-shell")
+    hl.exec_cmd("env NOCTALIA_CONFIG_DIR=$HOME/.dotfiles/noctalia/machines/$(hostname)/ qs -c noctalia-shell")
 end)

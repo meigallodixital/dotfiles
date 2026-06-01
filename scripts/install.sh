@@ -253,7 +253,8 @@ restore_backup() {
   fi
 
   if [ -d "$noctalia_target" ]; then
-    ln -sfn "$noctalia_target" "$CONFIG_DIR/noctalia"
+    # Eliminar ~/.config/noctalia (ahora se usa NOCTALIA_CONFIG_DIR en autostart.lua)
+    rm -rf "${CONFIG_DIR}/noctalia"
   fi
 }
 
@@ -304,8 +305,18 @@ create_symlinks() {
   prepare_noctalia_host_config "$hostname" || return 1
 
   safe_symlink "${DOTFILES_DIR}/hypr" "${CONFIG_DIR}/hypr" "Hyprland config" || return 1
-  safe_symlink "${DOTFILES_DIR}/noctalia/machines/${hostname}" "${CONFIG_DIR}/noctalia" "Noctalia config" || return 1
 
+  # Noctalia usa NOCTALIA_CONFIG_DIR (ver autostart.lua), no symlinks
+  # Limpiar estructura antigua si existe
+  if [ -L "${CONFIG_DIR}/noctalia" ]; then
+    log_warn "Eliminando symlink antiguo de Noctalia: ${CONFIG_DIR}/noctalia"
+    rm "${CONFIG_DIR}/noctalia"
+  elif [ -d "${CONFIG_DIR}/noctalia" ]; then
+    log_warn "Eliminando directorio antiguo de Noctalia: ${CONFIG_DIR}/noctalia"
+    rm -rf "${CONFIG_DIR}/noctalia"
+  fi
+
+  log_success "Noctalia config: usa NOCTALIA_CONFIG_DIR -> ${DOTFILES_DIR}/noctalia/machines/${hostname}"
   log_success "Symlinks creados correctamente"
   return 0
 }
@@ -322,12 +333,10 @@ validate_installation() {
     return 1
   fi
 
-  if [ ! -L "${CONFIG_DIR}/noctalia" ]; then
-    log_error "Symlink de Noctalia no válido"
-    return 1
+  if [ -d "${CONFIG_DIR}/noctalia" ] || [ -L "${CONFIG_DIR}/noctalia" ]; then
+    log_warn "Eliminando ~/.config/noctalia (ahora se usa NOCTALIA_CONFIG_DIR)"
+    rm -rf "${CONFIG_DIR}/noctalia"
   fi
-
-  log_success "Instalación validada correctamente"
   return 0
 }
 

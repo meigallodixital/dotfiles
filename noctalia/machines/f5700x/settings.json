@@ -411,7 +411,7 @@
         "deadOpacity": 0.6,
         "displayMode": "auto_hide",
         "dockType": "floating",
-        "enabled": true,
+        "enabled": false,
         "floatingRatio": 1,
         "groupApps": false,
         "groupClickAction": "cycle",
@@ -730,7 +730,7 @@
     },
     "wallpaper": {
         "automationEnabled": false,
-        "directory": "/home/ggonzalez/Pictures/Wallpapers",
+        "directory": "/home/meigallodixital/Imágenes/Wallpapers",
         "enableMultiMonitorDirectories": false,
         "enabled": true,
         "favorites": [
