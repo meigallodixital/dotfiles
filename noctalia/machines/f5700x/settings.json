@@ -730,7 +730,7 @@
     },
     "wallpaper": {
         "automationEnabled": false,
-        "directory": "/home/meigallodixital/Imágenes/Wallpapers",
+        "directory": "/home/ggonzalez/Pictures/Wallpapers",
         "enableMultiMonitorDirectories": false,
         "enabled": true,
         "favorites": [

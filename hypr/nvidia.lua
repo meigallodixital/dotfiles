@@ -6,6 +6,6 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")    -- Electron usa Wayland nativo
 
 hl.config({
     cursor = {
-        no_hardware_cursors = 1, -- cursor por software; evita artefactos visuales con NVIDIA
+        no_hardware_cursors = 0, -- permite hardware cursors
     },
 })

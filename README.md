@@ -18,14 +18,23 @@ Configuración personal del entorno de escritorio. Basado en **Hyprland** (Wayla
 │   ├── autostart.lua           # Aplicaciones que arrancan con la sesión
 │   ├── binds.lua               # Atajos de teclado
 │   ├── hosts/                  # Config específica por máquina (monitor, GPU)
-│   │   └── <hostname>.lua      # Generados automáticamente por el script
+│   │   └── <hostname>.lua      # Archivo por máquina
 │   └── .luarc.json             # Declara globals de Hyprland para el LSP de Lua
 └── noctalia/                    # Noctalia shell
-    ├── settings.json           # Ajustes generales
-    ├── colors.json             # Paleta de colores activa
-    ├── plugins.json            # Plugins habilitados
-    ├── colorschemes/           # Esquemas de color adicionales
-    └── plugins/                # Plugins instalados
+    ├── machines/
+    │   ├── f5700x/             # Perfil completo de la máquina f5700x
+    │   │   ├── settings.json
+    │   │   ├── colors.json
+    │   │   ├── plugins.json
+    │   │   ├── colorschemes/
+    │   │   └── plugins/
+    │   └── msi-work/           # Perfil completo de la máquina msi-work
+    │       ├── settings.json
+    │       ├── colors.json
+    │       ├── plugins.json
+    │       ├── colorschemes/
+    │       └── plugins/
+    └── (symlink local) ~/.config/noctalia -> ~/.dotfiles/noctalia/machines/<hostname>
 ```
 
 ## Instalación en una máquina nueva
@@ -41,7 +50,7 @@ cd ~/.dotfiles
 El script se encargará de:
 1. Detectar tu hardware (GPU, monitores)
 2. Validar que tengas las dependencias instaladas
-3. Generar la configuración específica de tu máquina
+3. Crear o preparar el perfil de Noctalia de tu máquina
 4. Crear los symlinks automáticamente
 5. Hacer backup de cualquier configuración anterior
 
@@ -54,11 +63,10 @@ git clone <repo> ~/.dotfiles
 
 # Crear symlinks
 ln -s ~/.dotfiles/hypr ~/.config/hypr
-ln -s ~/.dotfiles/noctalia ~/.config/noctalia
+ln -s ~/.dotfiles/noctalia/machines/$(hostname) ~/.config/noctalia
 
-# Generar el archivo de host específico de tu máquina
-cp ~/.dotfiles/hypr/hosts/f5700x.lua ~/.dotfiles/hypr/hosts/$(hostname).lua
-# Editar el fichero con la config de monitor y GPU de tu máquina
+# Editar el perfil de Noctalia de tu máquina
+# ~/.dotfiles/noctalia/machines/$(hostname)/
 ```
 
 ## Uso del Script de Instalación
