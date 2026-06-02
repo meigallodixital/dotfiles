@@ -30,10 +30,6 @@ hl.config({
         },
     },
 
-    render = {
-        xp_mode = true,              -- desactiva back buffer y capa inferior; mejora rendimiento
-    },
-
     animations = {
         enabled = true,              -- activa animaciones globales (curvas en animations.lua)
     },
