@@ -432,9 +432,7 @@ main() {
   fi
 
   # Detectar si ya está instalado
-  local already_installed=0
   if [ -f "$INSTALL_STATE" ]; then
-    already_installed=1
     log_info "Instalación anterior detectada"
   fi
 
